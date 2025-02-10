@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { EmitterWebhookEvent } from '@octokit/webhooks';
+import { Label } from '@octokit/webhooks-types';
 import { GitHub, getOctokitOptions } from '@actions/github/lib/utils';
 import { throttling } from '@octokit/plugin-throttling';
 import { detailedDiff } from 'deep-object-diff';
@@ -24,6 +25,19 @@ const retryDelays = [1, 1, 1, 2, 3, 4, 5, 10, 20, 40, 60].map((a) => a * 1000);
 const timeout = 6 * 60 * 60 * 1000;
 
 export async function run(): Promise<Result> {
+  // Add this line to define the new input for required labels
+  const requiredLabels = core
+    .getInput('required-labels')
+    .split(',')
+    .map((label) => label.trim());
+
+  const hasRequiredLabels = (labels: Label[]): boolean => {
+    if (requiredLabels.length === 0) {
+      return true;
+    }
+    return labels.some((label) => requiredLabels.includes(label.name));
+  };
+
   const startTime = Date.now();
   core.info('Starting');
 
@@ -54,6 +68,12 @@ export async function run(): Promise<Result> {
   );
 
   const pr = payload.pull_request;
+
+  // Check if the PR has the required labels
+  if (!hasRequiredLabels(pr.labels)) {
+    core.error(`PR does not have the required labels ${requiredLabels.join(', ')}`);
+    return Result.PRMergeSkipped;
+  }
 
   const Octokit: typeof GitHub = GitHub.plugin(throttling as any);
   const octokit = new Octokit(

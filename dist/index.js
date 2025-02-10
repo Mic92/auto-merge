@@ -33435,11 +33435,20 @@ var retryDelays = [1, 1, 1, 2, 3, 4, 5, 10, 20, 40, 60].map(function (a) { retur
 var timeout = 6 * 60 * 60 * 1000;
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var startTime, context, payload, token, approve, autoMerge, merge, mergeMethod, pr, Octokit, octokit, graphqlWithAuth, maybeAuthenticatedUser, e_1, maybeDisableAutoMerge, enableAutoMerge, readPackageJson, mergeWhenPossible, getPR, compareCommits, approvePR, result;
+        var requiredLabels, hasRequiredLabels, startTime, context, payload, token, approve, autoMerge, merge, mergeMethod, pr, Octokit, octokit, graphqlWithAuth, maybeAuthenticatedUser, e_1, maybeDisableAutoMerge, enableAutoMerge, readPackageJson, mergeWhenPossible, getPR, compareCommits, approvePR, result;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    requiredLabels = core.getInput('required-labels')
+                        .split(',')
+                        .map(function (label) { return label.trim(); });
+                    hasRequiredLabels = function (labels) {
+                        if (requiredLabels.length === 0) {
+                            return true;
+                        }
+                        return labels.some(function (label) { return requiredLabels.includes(label.name); });
+                    };
                     startTime = Date.now();
                     core.info('Starting');
                     context = github.context;
@@ -33455,6 +33464,11 @@ function run() {
                     merge = core.getInput('merge') === 'true';
                     mergeMethod = toMergeMethod(core.getInput('merge-method', { required: true }));
                     pr = payload.pull_request;
+                    // Check if the PR has the required labels
+                    if (!hasRequiredLabels(pr.labels)) {
+                        core.error('PR does not have the required labels');
+                        return [2 /*return*/, Result.PRMergeSkipped];
+                    }
                     Octokit = utils.GitHub.plugin(throttling);
                     octokit = new Octokit((0,utils.getOctokitOptions)(token, {
                         throttle: {

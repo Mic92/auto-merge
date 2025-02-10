@@ -17,6 +17,9 @@ inputs:
   merge-method:
     description: 'Merge method to use. Supported: "merge", "squash", "rebase"'
     default: 'merge'
+  required-labels:
+    description: 'Only merge pull requests that have one of these labels (comma-seperated)'
+    default: 'dependencies,auto-merge'
 outputs:
   success:
     description: '"true" if the commit meets the criteria'

@@ -18,14 +18,11 @@ By default this action will poll the API and wait for all status checks to pass 
 ## Config
 
 - `use-auto-merge`: **\[Recommended\]** Enable GitHub auto merge on the PR and exit instead of waiting for the checks to complete and merging. Auto merge must be enabled on the repo, and you should make sure this is a required status check. _Default: `false`_
-- `allowed-actors`: A comma separated list of usernames auto merge is allowed for.
 - `repo-token` (optional): a GitHub API token. _Default: The token provided to the workflow (`${{ github.token }}`)_
-- `allowed-update-types` (optional): A comma separated list of types of updates that are allowed. Supported: [devDependencies|dependencies]:[major|minor|patch|premajor|preminor|prerelease]. _Default: `devDependencies:minor, devDependencies:patch`_
 - `approve` (optional): Automatically approve the PR if it qualifies for auto merge. _Default: `true`_
-- `package-block-list` (optional): A comma separated list of packages that auto merge should not be allowed for.
-- `package-allow-list` (optional): A comma separated list of packages that auto merge should only be allowed for. Omit to allow all packages.
 - `merge` (optional): Merge the PR if it qualifies. _Default: `true`_
 - `merge-method` (optional): Merge method. Supported: `merge`, `squash`, `rebase` _Default: `merge`_
+- `required-labels`: (optional) Only merge pull requests that have one of these labels (comma-seperated). \_Default: "dependencies,auto-merge"
 
 You should configure this action to run on the `pull_request_target` event. If you use `pull_request` you might need to provide a custom `repo-token` which has permission to merge. [The default token for dependabot PRs only has read-only access](https://github.blog/changelog/2021-02-19-github-actions-workflows-triggered-by-dependabot-prs-will-run-with-read-only-permissions/).
 
@@ -54,5 +51,4 @@ jobs:
       - uses: tjenkinson/gh-action-auto-merge-dependency-updates@v1
         with:
           use-auto-merge: true
-          allowed-actors: dependabot[bot]
 ```
