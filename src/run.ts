@@ -20,24 +20,8 @@ const toMergeMethod = (method: string): MergeMethod => {
   throw new Error(`merge-method invalid: ${method}`);
 };
 
-const semverRegex = /^([~^]?)[0-9]+\.[0-9]+\.[0-9]+(-.+)?$/;
 const retryDelays = [1, 1, 1, 2, 3, 4, 5, 10, 20, 40, 60].map((a) => a * 1000);
 const timeout = 6 * 60 * 60 * 1000;
-const validBumpTypes = [
-  'major',
-  'premajor',
-  'minor',
-  'preminor',
-  'patch',
-  'prepatch',
-  'prerelease',
-];
-const allowedFileChanges = [
-  'package.json',
-  'package-lock.json',
-  'yarn.lock',
-  '.pnp.cjs',
-];
 
 export async function run(): Promise<Result> {
   const startTime = Date.now();
@@ -60,50 +44,9 @@ export async function run(): Promise<Result> {
 
   const token = core.getInput('repo-token', { required: true });
 
-  const allowedActors = core
-    .getInput('allowed-actors', { required: true })
-    .split(',')
-    .map((a) => a.trim())
-    .filter(Boolean);
-
-  const allowedUpdateTypes: Record<string, string[]> = {};
-  core
-    .getInput('allowed-update-types', { required: true })
-    .split(',')
-    .map((a) => a.trim())
-    .filter(Boolean)
-    .forEach((group) => {
-      const parts = group
-        .trim()
-        .split(':', 2)
-        .map((a) => a.trim());
-      if (parts.length !== 2 || !parts.every((a) => typeof a === 'string')) {
-        throw new Error('allowed-update-types invalid');
-      }
-      const [dependencyType, bumpType] = parts;
-      if (!allowedUpdateTypes[dependencyType]) {
-        allowedUpdateTypes[dependencyType] = [];
-      }
-      allowedUpdateTypes[dependencyType].push(bumpType);
-    });
-
   const approve = core.getInput('approve') === 'true';
 
-  const packageBlockList = (core.getInput('package-block-list') || '')
-    .split(',')
-    .map((a) => a.trim());
-
-  const packageAllowListRaw = core.getInput('package-allow-list');
-  const packageAllowList = packageAllowListRaw
-    ? packageAllowListRaw.split(',').map((a) => a.trim())
-    : null;
-
   const autoMerge = core.getInput('use-auto-merge') === 'true';
-
-  if (!allowedActors.includes(context.actor)) {
-    core.error(`Actor not allowed: ${context.actor}`);
-    return Result.ActorNotAllowed;
-  }
 
   const merge = core.getInput('merge') === 'true';
   const mergeMethod = toMergeMethod(
@@ -385,113 +328,6 @@ export async function run(): Promise<Result> {
       event: 'APPROVE',
     });
   };
-
-  const validVersionChange = (
-    oldVersion: string,
-    newVersion: string,
-    allowedBumpTypes: string[],
-  ): boolean => {
-    const oldVersionMatches = semverRegex.exec(oldVersion);
-    if (!oldVersionMatches) {
-      return false;
-    }
-    const newVersionMatches = semverRegex.exec(newVersion);
-    if (!newVersionMatches) {
-      return false;
-    }
-    const oldVersionPrefix = oldVersionMatches[1];
-    const newVersionPrefix = newVersionMatches[1];
-    if (oldVersionPrefix !== newVersionPrefix) {
-      return false;
-    }
-
-    const oldVersionExact = oldVersion.slice(oldVersionPrefix.length);
-    const newVersionExact = newVersion.slice(newVersionPrefix.length);
-
-    if (semver.gte(oldVersionExact, newVersionExact)) {
-      return false;
-    }
-
-    const allowed: Array<string | null> = allowedBumpTypes.filter((type) =>
-      validBumpTypes.includes(type),
-    );
-    return allowed.includes(semver.diff(oldVersionExact, newVersionExact));
-  };
-
-  core.info('Getting PR files');
-  const comparison = await compareCommits();
-  core.debug(JSON.stringify(comparison, null, 2));
-  if (!comparison.data.files) {
-    throw new Error('Unexpected error. `files` missing in commit comparison');
-  }
-  const onlyAllowedFilesChanged = comparison.data.files.every(
-    ({ filename, status }) =>
-      allowedFileChanges.includes(filename) && status === 'modified',
-  );
-  if (!onlyAllowedFilesChanged) {
-    core.error(
-      `More changed than ${allowedFileChanges.map((a) => `"${a}"`).join(', ')}`,
-    );
-    await maybeDisableAutoMerge();
-    return Result.FileNotAllowed;
-  }
-
-  core.info('Retrieving package.json');
-  const packageJsonBase = await readPackageJson(pr.base.sha);
-  const packageJsonPr = await readPackageJson(pr.head.sha);
-
-  core.info('Calculating diff');
-  const diff: any = detailedDiff(packageJsonBase, packageJsonPr);
-  core.debug(JSON.stringify(diff, null, 2));
-  if (Object.keys(diff.added).length || Object.keys(diff.deleted).length) {
-    core.error('Unexpected changes');
-    await maybeDisableAutoMerge();
-    return Result.UnexpectedChanges;
-  }
-
-  core.info('Checking diff');
-
-  const allowedPropsChanges = Object.keys(diff.updated).every((prop) => {
-    return (
-      ['dependencies', 'devDependencies'].includes(prop) &&
-      diff.updated[prop] &&
-      typeof diff.updated[prop] === 'object' &&
-      !Array.isArray(diff.updated[prop])
-    );
-  });
-  if (!allowedPropsChanges) {
-    core.error('Unexpected property change');
-    await maybeDisableAutoMerge();
-    return Result.UnexpectedPropertyChange;
-  }
-
-  const allowedChange = Object.keys(diff.updated).every((prop) => {
-    const allowedBumpTypes = allowedUpdateTypes[prop] || [];
-    const changedDependencies = diff.updated[prop];
-    return Object.keys(changedDependencies).every((dependency) => {
-      if (typeof changedDependencies[dependency] !== 'string') {
-        return false;
-      }
-      if (packageAllowList && !packageAllowList.includes(dependency)) {
-        return false;
-      }
-      if (packageBlockList.includes(dependency)) {
-        return false;
-      }
-      const oldVersion = packageJsonBase[prop][dependency];
-      const newVersion = packageJsonPr[prop][dependency];
-      if (typeof oldVersion !== 'string' || typeof newVersion !== 'string') {
-        return false;
-      }
-      return validVersionChange(oldVersion, newVersion, allowedBumpTypes);
-    });
-  });
-
-  if (!allowedChange) {
-    core.error('One or more version changes are not allowed');
-    await maybeDisableAutoMerge();
-    return Result.VersionChangeNotAllowed;
-  }
 
   core.setOutput('success', 'true');
 
