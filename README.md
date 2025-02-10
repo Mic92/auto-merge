@@ -17,7 +17,7 @@ By default this action will poll the API and wait for all status checks to pass 
 
 ## Config
 
-- `use-auto-merge`: **\[Recommended\]** Enable GitHub auto merge on the PR and exit instead of waiting for the checks to complete and merging. Auto merge must be enabled on the repo, and you should make sure this is a required status check. _Default: `false`_
+- `use-auto-merge`: **\[Recommended\]** Enable GitHub auto merge on the PR and exit instead of waiting for the checks to complete and merging. Auto merge must be enabled on the repo, and you should make sure this is a required status check. _Default: `true`_
 - `repo-token` (optional): a GitHub API token. _Default: The token provided to the workflow (`${{ github.token }}`)_
 - `approve` (optional): Automatically approve the PR if it qualifies for auto merge. _Default: `true`_
 - `merge` (optional): Merge the PR if it qualifies. _Default: `true`_
@@ -45,10 +45,8 @@ jobs:
       contents: write
       pull-requests: write
     concurrency:
-      group: 'auto-merge-dependency-updates:${{ github.head_ref }}'
+      group: 'auto-merge:${{ github.head_ref }}'
       cancel-in-progress: true
     steps:
-      - uses: tjenkinson/gh-action-auto-merge-dependency-updates@v1
-        with:
-          use-auto-merge: true
+      - uses: Mic92@auto-merge@master
 ```
