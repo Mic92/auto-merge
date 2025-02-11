@@ -10,7 +10,3 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./
-        with:
-          use-auto-merge: true
-          allowed-actors: tjenkinson, dependabot[bot]
-          package-block-list: '@actions/core, @actions/github'
