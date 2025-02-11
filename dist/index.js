@@ -33435,7 +33435,7 @@ var retryDelays = [1, 1, 1, 2, 3, 4, 5, 10, 20, 40, 60].map(function (a) { retur
 var timeout = 6 * 60 * 60 * 1000;
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var requiredLabels, hasRequiredLabels, startTime, context, payload, token, approve, autoMerge, merge, mergeMethod, pr, Octokit, octokit, graphqlWithAuth, maybeAuthenticatedUser, e_1, maybeDisableAutoMerge, enableAutoMerge, readPackageJson, mergeWhenPossible, getPR, compareCommits, approvePR, result;
+        var requiredLabels, hasRequiredLabels, startTime, context, payload, token, approve, autoMerge, merge, mergeMethod, pr, Octokit, octokit, graphqlWithAuth, maybeAuthenticatedUser, e_1, enableAutoMerge, mergeWhenPossible, getPR, approvePR, result;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -33466,7 +33466,7 @@ function run() {
                     pr = payload.pull_request;
                     // Check if the PR has the required labels
                     if (!hasRequiredLabels(pr.labels)) {
-                        core.error('PR does not have the required labels');
+                        core.error("PR does not have the required labels ".concat(requiredLabels.join(', ')));
                         return [2 /*return*/, Result.PRMergeSkipped];
                     }
                     Octokit = utils.GitHub.plugin(throttling);
@@ -33504,38 +33504,6 @@ function run() {
                     }
                     return [3 /*break*/, 4];
                 case 4:
-                    maybeDisableAutoMerge = function () { return __awaiter(_this, void 0, void 0, function () {
-                        var node, autoMergeEnabledBy;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    if (!autoMerge)
-                                        return [2 /*return*/];
-                                    core.debug('Checking if auto merge enabled');
-                                    return [4 /*yield*/, graphqlWithAuth("\n        query($id: ID!) {\n          node(id: $id) {\n            ... on PullRequest {\n              autoMergeRequest {\n                enabledBy {\n                  login\n                }\n              }\n            }\n          }\n        }\n      ", { id: pr.node_id })];
-                                case 1:
-                                    node = (_a.sent()).node;
-                                    // auto merge not enabled
-                                    if (!node.autoMergeRequest) {
-                                        core.debug('Auto merge not enabled');
-                                        return [2 /*return*/];
-                                    }
-                                    autoMergeEnabledBy = node.autoMergeRequest.enabledBy.login;
-                                    if (autoMergeEnabledBy !==
-                                        (maybeAuthenticatedUser ? maybeAuthenticatedUser.login : 'github-actions')) {
-                                        // auto merge enabled by someone else so leave it
-                                        core.debug('Leaving auto merge enabled');
-                                        return [2 /*return*/];
-                                    }
-                                    core.info('Disabling auto merge');
-                                    return [4 /*yield*/, graphqlWithAuth("\n          mutation ($id: ID!) {\n            disablePullRequestAutoMerge(input: { pullRequestId: $id }) {\n              clientMutationId\n            }\n          }\n      ", { id: pr.node_id })];
-                                case 2:
-                                    _a.sent();
-                                    core.info('Auto merge disabled');
-                                    return [2 /*return*/];
-                            }
-                        });
-                    }); };
                     enableAutoMerge = function () { return __awaiter(_this, void 0, void 0, function () {
                         var repository, e_2;
                         return __generator(this, function (_a) {
@@ -33580,28 +33548,6 @@ function run() {
                                     core.info('Merged');
                                     return [2 /*return*/, Result.PRMerged];
                                 case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); };
-                    readPackageJson = function (ref) { return __awaiter(_this, void 0, void 0, function () {
-                        var content;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, octokit.rest.repos.getContent({
-                                        owner: context.repo.owner,
-                                        repo: context.repo.repo,
-                                        path: 'package.json',
-                                        ref: ref,
-                                    })];
-                                case 1:
-                                    content = _a.sent();
-                                    if (!('type' in content.data) ||
-                                        content.data.type !== 'file' ||
-                                        !('encoding' in content.data) ||
-                                        content.data.encoding !== 'base64') {
-                                        throw new Error('Unexpected repo content response');
-                                    }
-                                    return [2 /*return*/, JSON.parse(Buffer.from(content.data.content, 'base64').toString('utf-8'))];
                             }
                         });
                     }); };
@@ -33690,14 +33636,6 @@ function run() {
                             owner: context.repo.owner,
                             repo: context.repo.repo,
                             pull_number: pr.number,
-                        });
-                    };
-                    compareCommits = function () {
-                        return octokit.rest.repos.compareCommits({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            base: pr.base.sha,
-                            head: pr.head.sha,
                         });
                     };
                     approvePR = function () { return __awaiter(_this, void 0, void 0, function () {

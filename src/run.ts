@@ -4,8 +4,6 @@ import { EmitterWebhookEvent } from '@octokit/webhooks';
 import { Label } from '@octokit/webhooks-types';
 import { GitHub, getOctokitOptions } from '@actions/github/lib/utils';
 import { throttling } from '@octokit/plugin-throttling';
-import { detailedDiff } from 'deep-object-diff';
-import semver from 'semver';
 import { Result } from './result';
 import { graphql } from '@octokit/graphql';
 
@@ -114,59 +112,6 @@ export async function run(): Promise<Result> {
       core.warning(e);
     }
   }
-
-  const maybeDisableAutoMerge = async (): Promise<void> => {
-    if (!autoMerge) return;
-
-    core.debug('Checking if auto merge enabled');
-
-    const { node } = (await graphqlWithAuth(
-      `
-        query($id: ID!) {
-          node(id: $id) {
-            ... on PullRequest {
-              autoMergeRequest {
-                enabledBy {
-                  login
-                }
-              }
-            }
-          }
-        }
-      `,
-      { id: pr.node_id },
-    )) as any;
-
-    // auto merge not enabled
-    if (!node.autoMergeRequest) {
-      core.debug('Auto merge not enabled');
-      return;
-    }
-
-    const autoMergeEnabledBy = node.autoMergeRequest.enabledBy.login;
-    if (
-      autoMergeEnabledBy !==
-      (maybeAuthenticatedUser ? maybeAuthenticatedUser.login : 'github-actions')
-    ) {
-      // auto merge enabled by someone else so leave it
-      core.debug('Leaving auto merge enabled');
-      return;
-    }
-
-    core.info('Disabling auto merge');
-    await graphqlWithAuth(
-      `
-          mutation ($id: ID!) {
-            disablePullRequestAutoMerge(input: { pullRequestId: $id }) {
-              clientMutationId
-            }
-          }
-      `,
-      { id: pr.node_id },
-    );
-    core.info('Auto merge disabled');
-  };
-
   const enableAutoMerge = async (): Promise<
     Result.AutoMergeEnabled | Result.PRMerged
   > => {
@@ -223,27 +168,6 @@ export async function run(): Promise<Result> {
     }
   };
 
-  const readPackageJson = async (ref: string): Promise<Record<string, any>> => {
-    const content = await octokit.rest.repos.getContent({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      path: 'package.json',
-      ref,
-    });
-
-    if (
-      !('type' in content.data) ||
-      content.data.type !== 'file' ||
-      !('encoding' in content.data) ||
-      content.data.encoding !== 'base64'
-    ) {
-      throw new Error('Unexpected repo content response');
-    }
-    return JSON.parse(
-      Buffer.from(content.data.content, 'base64').toString('utf-8'),
-    );
-  };
-
   const mergeWhenPossible = async (): Promise<
     Result.PRNotOpen | Result.PRHeadChanged | Result.PRMerged
   > => {
@@ -296,14 +220,6 @@ export async function run(): Promise<Result> {
       owner: context.repo.owner,
       repo: context.repo.repo,
       pull_number: pr.number,
-    });
-
-  const compareCommits = () =>
-    octokit.rest.repos.compareCommits({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      base: pr.base.sha,
-      head: pr.head.sha,
     });
 
   const approvePR = async () => {
