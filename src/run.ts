@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { EmitterWebhookEvent } from '@octokit/webhooks';
 import { Label } from '@octokit/webhooks-types';
-import { GitHub, getOctokitOptions } from '@actions/github/lib/utils';
+import { getOctokitOptions, GitHub } from '@actions/github/lib/utils';
 import { throttling } from '@octokit/plugin-throttling';
 import { Result } from './result';
 import { graphql } from '@octokit/graphql';
@@ -27,7 +27,7 @@ export async function run(): Promise<Result> {
   const requiredLabels = core
     .getInput('required-labels')
     .split(',')
-    .map((label) => label.trim());
+    .map((label: string) => label.trim());
 
   const hasRequiredLabels = (labels: Label[]): boolean => {
     if (requiredLabels.length === 0) {
@@ -69,7 +69,9 @@ export async function run(): Promise<Result> {
 
   // Check if the PR has the required labels
   if (!hasRequiredLabels(pr.labels)) {
-    core.error(`PR does not have the required labels ${requiredLabels.join(', ')}`);
+    core.error(
+      `PR does not have the required labels ${requiredLabels.join(', ')}`,
+    );
     return Result.PRMergeSkipped;
   }
 
@@ -235,7 +237,7 @@ export async function run(): Promise<Result> {
       ).data;
 
       const existingReview = existingReviews.find(
-        ({ user, state }) =>
+        ({ user, state }): boolean =>
           user?.id === authenticatedUser.id && state === 'PENDING',
       );
 
