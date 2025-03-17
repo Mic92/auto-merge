@@ -225,39 +225,57 @@ export async function run(): Promise<Result> {
     });
 
   const approvePR = async () => {
-    if (maybeAuthenticatedUser) {
-      const authenticatedUser = maybeAuthenticatedUser;
-
-      const existingReviews = (
-        await octokit.rest.pulls.listReviews({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          pull_number: pr.number,
-        })
-      ).data;
-
-      const existingReview = existingReviews.find(
-        ({ user, state }): boolean =>
-          user?.id === authenticatedUser.id && state === 'PENDING',
-      );
-
-      if (existingReview) {
-        core.info(`Found an existing pending review. Deleting it`);
-        await octokit.rest.pulls.deletePendingReview({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          pull_number: pr.number,
-          review_id: existingReview.id,
-        });
-      }
+    if (!maybeAuthenticatedUser) {
+      core.warning('No authenticated user found, cannot approve PR');
+      return;
     }
 
+    const authenticatedUser = maybeAuthenticatedUser;
+
+    // Fetch existing reviews
+    const existingReviews = (
+      await octokit.rest.pulls.listReviews({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: pr.number,
+      })
+    ).data;
+
+    // Check if user has already approved this PR
+    const alreadyApproved = existingReviews.some(
+      ({ user, state }) =>
+        user?.id === authenticatedUser.id && state === 'APPROVED',
+    );
+
+    if (alreadyApproved) {
+      core.info(`PR already approved by the authenticated user`);
+      return;
+    }
+
+    // Check for pending reviews to delete
+    const pendingReview = existingReviews.find(
+      ({ user, state }) =>
+        user?.id === authenticatedUser.id && state === 'PENDING',
+    );
+
+    if (pendingReview) {
+      core.info(`Found an existing pending review. Deleting it`);
+      await octokit.rest.pulls.deletePendingReview({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: pr.number,
+        review_id: pendingReview.id,
+      });
+    }
+
+    // Create and submit new approval
     const review = await octokit.rest.pulls.createReview({
       owner: context.repo.owner,
       repo: context.repo.repo,
       pull_number: pr.number,
       commit_id: pr.head.sha,
     });
+
     await octokit.rest.pulls.submitReview({
       owner: context.repo.owner,
       repo: context.repo.repo,

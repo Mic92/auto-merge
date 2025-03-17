@@ -34752,12 +34752,15 @@ function run() {
                         });
                     };
                     approvePR = function () { return __awaiter(_this, void 0, void 0, function () {
-                        var authenticatedUser_1, existingReviews, existingReview, review;
+                        var authenticatedUser, existingReviews, alreadyApproved, pendingReview, review;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    if (!maybeAuthenticatedUser) return [3 /*break*/, 3];
-                                    authenticatedUser_1 = maybeAuthenticatedUser;
+                                    if (!maybeAuthenticatedUser) {
+                                        core.warning('No authenticated user found, cannot approve PR');
+                                        return [2 /*return*/];
+                                    }
+                                    authenticatedUser = maybeAuthenticatedUser;
                                     return [4 /*yield*/, octokit.rest.pulls.listReviews({
                                             owner: context.repo.owner,
                                             repo: context.repo.repo,
@@ -34765,17 +34768,25 @@ function run() {
                                         })];
                                 case 1:
                                     existingReviews = (_a.sent()).data;
-                                    existingReview = existingReviews.find(function (_a) {
+                                    alreadyApproved = existingReviews.some(function (_a) {
                                         var user = _a.user, state = _a.state;
-                                        return (user === null || user === void 0 ? void 0 : user.id) === authenticatedUser_1.id && state === 'PENDING';
+                                        return (user === null || user === void 0 ? void 0 : user.id) === authenticatedUser.id && state === 'APPROVED';
                                     });
-                                    if (!existingReview) return [3 /*break*/, 3];
+                                    if (alreadyApproved) {
+                                        core.info("PR already approved by the authenticated user");
+                                        return [2 /*return*/];
+                                    }
+                                    pendingReview = existingReviews.find(function (_a) {
+                                        var user = _a.user, state = _a.state;
+                                        return (user === null || user === void 0 ? void 0 : user.id) === authenticatedUser.id && state === 'PENDING';
+                                    });
+                                    if (!pendingReview) return [3 /*break*/, 3];
                                     core.info("Found an existing pending review. Deleting it");
                                     return [4 /*yield*/, octokit.rest.pulls.deletePendingReview({
                                             owner: context.repo.owner,
                                             repo: context.repo.repo,
                                             pull_number: pr.number,
-                                            review_id: existingReview.id,
+                                            review_id: pendingReview.id,
                                         })];
                                 case 2:
                                     _a.sent();
