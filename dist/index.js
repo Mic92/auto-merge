@@ -33306,7 +33306,6 @@ var light = __nccwpck_require__(3251);
 // pkg/dist-src/index.js
 
 
-
 // pkg/dist-src/version.js
 var VERSION = "0.0.0-development";
 
@@ -33358,6 +33357,8 @@ var triggers_notification_paths_default = [
   "/repos/{owner}/{repo}/commits/{commit_sha}/comments",
   "/repos/{owner}/{repo}/issues",
   "/repos/{owner}/{repo}/issues/{issue_number}/comments",
+  "/repos/{owner}/{repo}/issues/{issue_number}/sub_issue",
+  "/repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority",
   "/repos/{owner}/{repo}/pulls",
   "/repos/{owner}/{repo}/pulls/{pull_number}/comments",
   "/repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies",
@@ -33419,7 +33420,10 @@ function throttling(octokit, octokitOptions) {
   if (!enabled) {
     return {};
   }
-  const common = { connection, timeout };
+  const common = { timeout };
+  if (typeof connection !== "undefined") {
+    common.connection = connection;
+  }
   if (groups.global == null) {
     createGroups(Bottleneck, common);
   }
@@ -33460,7 +33464,7 @@ function throttling(octokit, octokitOptions) {
     const [state2, request, options] = info.args;
     const { pathname } = new URL(options.url, "http://github.test");
     const shouldRetryGraphQL = pathname.startsWith("/graphql") && error.status !== 401;
-    if (!(shouldRetryGraphQL || error.status === 403)) {
+    if (!(shouldRetryGraphQL || error.status === 403 || error.status === 429)) {
       return;
     }
     const retryCount = ~~request.retryCount;
