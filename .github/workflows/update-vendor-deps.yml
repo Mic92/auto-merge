@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
       - name: Update vendored deps
         run: |
           ./scripts/update-vendored-deps.sh
