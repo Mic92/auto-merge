@@ -1,12 +1,10 @@
-# gh-action-auto-merge-dependency-updates
+# auto-merge
 
-A GitHub action that will automatically approve and merge a PR that only contains dependency updates, based on some rules.
+A GitHub action that will automatically approve and merge pull requests based on configurable rules.
 
 If you run tests on PR's make sure you [configure those as required status checks](https://docs.github.com/en/github/administering-a-repository/enabling-required-status-checks) so that they need to go green before the merge can occur.
 
-Note that the action does not check the lockfile is valid, so you should only set `allowed-actors` you trust, or validate that the lockfile is correct in another required action.
-
-It currently supports npm and yarn.
+This action is commonly used for dependency update PRs (from Dependabot, Renovate, etc.) but can be configured to work with any type of pull request that matches your criteria.
 
 By default this action will poll the API and wait for all status checks to pass which is not very efficient. It's recommended that you:
 
@@ -17,12 +15,14 @@ By default this action will poll the API and wait for all status checks to pass 
 
 ## Config
 
-- `use-auto-merge`: **\[Recommended\]** Enable GitHub auto merge on the PR and exit instead of waiting for the checks to complete and merging. Auto merge must be enabled on the repo, and you should make sure this is a required status check. _Default: `true`_
-- `repo-token` (optional): a GitHub API token. _Default: The token provided to the workflow (`${{ github.token }}`)_
-- `approve` (optional): Automatically approve the PR if it qualifies for auto merge. _Default: `true`_
-- `merge` (optional): Merge the PR if it qualifies. _Default: `true`_
-- `merge-method` (optional): Merge method. Supported: `merge`, `squash`, `rebase` _Default: `merge`_
-- `required-labels`: (optional) Only merge pull requests that have one of these labels (comma-seperated). \_Default: "dependencies,auto-merge"
+| Input             | Description                                                                                                                                                                                                                | Default                   |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `use-auto-merge`  | **[Recommended]** Enable GitHub auto merge on the PR and exit instead of waiting for the checks to complete and merging. Auto merge must be enabled on the repo, and you should make sure this is a required status check. | `true`                    |
+| `repo-token`      | GitHub API token                                                                                                                                                                                                           | `${{ github.token }}`     |
+| `approve`         | Automatically approve the PR if it qualifies for auto merge                                                                                                                                                                | `true`                    |
+| `merge`           | Merge the PR if it qualifies                                                                                                                                                                                               | `true`                    |
+| `merge-method`    | Merge method. Supported: `merge`, `squash`, `rebase`                                                                                                                                                                       | `merge`                   |
+| `required-labels` | Only merge pull requests that have one of these labels (comma-separated)                                                                                                                                                   | `dependencies,auto-merge` |
 
 You should configure this action to run on the `pull_request_target` event. If you use `pull_request` you might need to provide a custom `repo-token` which has permission to merge. [The default token for dependabot PRs only has read-only access](https://github.blog/changelog/2021-02-19-github-actions-workflows-triggered-by-dependabot-prs-will-run-with-read-only-permissions/).
 
@@ -48,5 +48,5 @@ jobs:
       group: 'auto-merge:${{ github.head_ref }}'
       cancel-in-progress: true
     steps:
-      - uses: Mic92@auto-merge@master
+      - uses: Mic92/auto-merge@main
 ```
