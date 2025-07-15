@@ -19,7 +19,7 @@ jobs:
         uses: cachix/install-nix-action@v31
       - name: Update vendored deps
         run: |
-          ./scripts/update-vendored-deps.sh
+          bash -x ./scripts/update-vendored-deps.sh
           # git push if we have a diff
           if [[ -n $(git diff) ]]; then
             git add default.nix
