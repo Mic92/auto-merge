@@ -1,10 +1,9 @@
 {
-  "name": "gh-action-auto-merge-dependency-updates",
+  "name": "auto-merge",
   "version": "0.0.0",
   "private": true,
-  "description": "A GitHub action that will automatically merge a PR that only contains dependency updates, based on some rules.",
+  "description": "A GitHub action that will automatically approve and merge pull requests based on configurable rules.",
   "scripts": {
-    "prepare": "husky install",
     "build": "rm -rf dist && ncc build ./src/index.ts -o dist --license licenses.txt",
     "watch": "ncc build ./src/index.ts -o dist --watch",
     "prettier": "prettier --write .",
@@ -12,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tjenkinson/gh-action-auto-merge-dependency-updates.git"
+    "url": "git+https://github.com/Mic92/auto-merge.git"
   },
-  "author": "Tom Jenkinson <tom@tjenkinson.me>",
+  "author": "Joerg Thalheim <joerg@thalheim.io>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tjenkinson/gh-action-auto-merge-dependency-updates/issues"
+    "url": "https://github.com/Mic92/auto-merge/issues"
   },
-  "homepage": "https://github.com/tjenkinson/gh-action-auto-merge-dependency-updates#readme",
+  "homepage": "https://github.com/Mic92/auto-merge#readme",
   "devDependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
@@ -29,9 +28,7 @@
     "@octokit/webhooks-types": "^7.6.1",
     "@types/node": "^24.0.0",
     "@vercel/ncc": "^0.38.1",
-    "husky": "^9.0.11",
     "prettier": "^3.2.5",
-    "ts-jest": "^29.1.2",
     "tslib": "^2.6.2",
     "typescript": "^5.4.3"
   }
