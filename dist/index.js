@@ -34261,7 +34261,7 @@ class RequestError extends Error {
 
 
 // pkg/dist-src/version.js
-var request_dist_bundle_VERSION = "10.0.3";
+var request_dist_bundle_VERSION = "10.0.6";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {

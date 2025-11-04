@@ -22,7 +22,7 @@ jobs:
           bash -x ./scripts/update-vendored-deps.sh
           # git push if we have a diff
           if [[ -n $(git diff) ]]; then
-            git add default.nix
+            git add default.nix dist/ package-lock.json
             git config --global user.email "<49699333+dependabot[bot]@users.noreply.github.com>"
             git config --global user.name "dependabot[bot]"
             git commit -m "update vendored deps"
