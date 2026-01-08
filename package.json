@@ -21,7 +21,7 @@
   "homepage": "https://github.com/Mic92/auto-merge#readme",
   "devDependencies": {
     "@actions/core": "^2.0.0",
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^7.0.0",
     "@octokit/graphql": "^9.0.1",
     "@octokit/plugin-throttling": "^11.0.1",
     "@octokit/webhooks": "^14.0.0",
