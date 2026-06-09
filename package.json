@@ -27,7 +27,7 @@
     "@octokit/webhooks": "^14.0.0",
     "@octokit/webhooks-types": "^7.6.1",
     "@types/node": "^25.0.0",
-    "@vercel/ncc": "^0.38.1",
+    "@vercel/ncc": "^0.44.0",
     "prettier": "^3.2.5",
     "tslib": "^2.6.2",
     "typescript": "^5.4.3"
