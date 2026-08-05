@@ -38527,12 +38527,14 @@ function run() {
                         },
                     });
                     maybeAuthenticatedUser = null;
+                    if (!approve) return [3 /*break*/, 4];
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
                     return [4 /*yield*/, octokit.rest.users.getAuthenticated()];
                 case 2:
-                    maybeAuthenticatedUser = (_a.sent()).data;
+                    maybeAuthenticatedUser = (_a.sent())
+                        .data;
                     core_debug("Authenticated user: ".concat(maybeAuthenticatedUser.id));
                     return [3 /*break*/, 4];
                 case 3:
