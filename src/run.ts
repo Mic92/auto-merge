@@ -105,13 +105,16 @@ export async function run(): Promise<Result> {
       >['data']
     | null = null;
 
-  try {
-    maybeAuthenticatedUser = (await octokit.rest.users.getAuthenticated()).data;
-    core.debug(`Authenticated user: ${maybeAuthenticatedUser.id}`);
-  } catch (e) {
-    core.warning('Error fetching authenticated user');
-    if (core.isDebug() && (e instanceof Error || typeof e === 'string')) {
-      core.warning(e);
+  if (approve) {
+    try {
+      maybeAuthenticatedUser = (await octokit.rest.users.getAuthenticated())
+        .data;
+      core.debug(`Authenticated user: ${maybeAuthenticatedUser.id}`);
+    } catch (e) {
+      core.warning('Error fetching authenticated user');
+      if (core.isDebug() && (e instanceof Error || typeof e === 'string')) {
+        core.warning(e);
+      }
     }
   }
   const enableAutoMerge = async (): Promise<
