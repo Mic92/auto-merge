@@ -24,7 +24,7 @@ outputs:
   success:
     description: '"true" if the commit meets the criteria'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: 'git-merge'
